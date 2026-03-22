@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Secure Terminal</title>
+
+<style>
+body {
+    background: black;
+    color: #00ff88;
+    font-family: monospace;
+    padding: 20px;
+}
+
+#version {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: #00ffaa;
+}
+
+#output {
+    white-space: pre-line;
+    margin-bottom: 15px;
+}
+
+input {
+    background: black;
+    color: #00ff88;
+    border: 1px solid #00ff88;
+    padding: 5px;
+    margin-top: 5px;
+}
+
+button {
+    background: black;
+    color: #00ff88;
+    border: 1px solid #00ff88;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.hidden { display: none; }
+</style>
+</head>
+
+<body>
+
+<div id="version">v2.0.0</div>
+
+<div id="output">=== SECURE TERMINAL ===</div>
+
+<!-- LOGIN -->
+<div id="login">
+    <div>Username: <input id="username"></div>
+    <div>Password: <input id="password" type="password"></div>
+    <button onclick="login()">Login</button>
+</div>
+
+<!-- TERMINAL -->
+<div id="terminal" class="hidden">
+    <div id="info"></div>
+    <div id="docs"></div>
+
+    <div style="margin-top:10px;">
+        > <input id="cmd" placeholder="type command...">
+        <button onclick="runCommand()">Run</button>
+    </div>
+</div>
+
+<script>
+
+// ================= USERS =================
+const users = {
+    "Mike": {
+        password: "FGC-1",
+        org: "FurrArmy",
+        clearance: 10
+    },
+    "Travis": {
+        password: "HoRC",
+        org: "Reelmind Corp",
+        clearance: 10
+    }
+};
+
+// ================= DOCS =================
+let docs = [
+    {id:"FA_001", title:"Operation Paw", org:"FurrArmy", clearance:5},
+    {id:"FA_002", title:"Weapons Overview", org:"FurrArmy", clearance:8},
+    {id:"RM_001", title:"AI Surveillance", org:"Reelmind Corp", clearance:7},
+    {id:"RM_002", title:"Neural Logs", org:"Reelmind Corp", clearance:10}
+];
+
+let currentUser = null;
+
+// ================= PRINT =================
+function slowPrint(el, text, speed=20){
+    el.innerText = "";
+    let i = 0;
+    function type(){
+        if(i < text.length){
+            el.innerText += text[i++];
+            setTimeout(type, speed);
+        }
+    }
+    type();
+}
+
+// ================= LOGIN =================
+function login(){
+    const u = username.value;
+    const p = password.value;
+
+    const user = users[u];
+
+    if(user && user.password === p){
+        currentUser = {...user, name:u};
+
+        loginDiv = document.getElementById("login");
+        termDiv = document.getElementById("terminal");
+
+        loginDiv.classList.add("hidden");
+        termDiv.classList.remove("hidden");
+
+        info.innerText =
+`ACCESS GRANTED
+User: ${u}
+Org: ${user.org}
+Clearance: ${user.clearance}`;
+
+    } else {
+        output.innerText = "ACCESS DENIED";
+    }
+}
+
+// ================= COMMANDS =================
+function runCommand(){
+    const input = cmd.value.trim();
+    const [command, arg] = input.split(" ");
+
+    if(command === "help"){
+        docsDiv.innerText = "COMMANDS:\nopen <ID>\nlogout\nhelp\nsync";
+    }
+
+    else if(command === "logout"){
+        location.reload();
+    }
+
+    else if(command === "open"){
+        openDoc(arg);
+    }
+
+    else if(command === "sync"){
+        syncGitHub();
+    }
+
+    else{
+        docsDiv.innerText = "UNKNOWN COMMAND";
+    }
+
+    cmd.value = "";
+}
+
+// ================= OPEN DOC =================
+function openDoc(id){
+    const doc = docs.find(d => d.id === id);
+
+    if(!doc){
+        docsDiv.innerText = "DOC NOT FOUND";
+        return;
+    }
+
+    if(doc.org !== currentUser.org){
+        docsDiv.innerText = "ACCESS DENIED (ORG)";
+        return;
+    }
+
+    if(currentUser.clearance < doc.clearance){
+        docsDiv.innerText = "ACCESS DENIED (CLEARANCE)";
+        return;
+    }
+
+    docsDiv.innerText =
+`${doc.id} - ${doc.title}
+
+STATUS: CLASSIFIED
+Clearance Required: ${doc.clearance}
+
+Content:
+[REDACTED DATA STREAM...]`;
+}
+
+// ================= GITHUB SYNC =================
+async function syncGitHub(){
+    docsDiv.innerText = "SYNCING WITH GITHUB...";
+
+    try {
+        const res = await fetch("https://raw.githubusercontent.com/YOUR_REPO/docs.json");
+        const data = await res.json();
+
+        docs = data;
+        docsDiv.innerText = "SYNC COMPLETE";
+    } catch(e){
+        docsDiv.innerText = "SYNC FAILED";
+    }
+}
+
+const docsDiv = document.getElementById("docs");
+
+</script>
+
+</body>
+</html>
