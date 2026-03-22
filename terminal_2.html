@@ -196,7 +196,7 @@ async function syncGitHub(){
     docsDiv.innerText = "SYNCING WITH GITHUB...";
 
     try {
-        const res = await fetch("https://raw.githubusercontent.com/YOUR_REPO/docs.json");
+        const res = await fetch("https://raw.githubusercontent.com/FurrArmy/CC/refs/heads/main/terminal_2.html");
         const data = await res.json();
 
         docs = data;
